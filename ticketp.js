@@ -128,7 +128,7 @@ client.on('message', msg => {
 	
 	if(msg.content.toLowerCase().startsWith('r!help') && !help)
 	{
-		msg.channel.send('[오류!] 구문: `r!help @호출할-관리자-이름-멘션(핑) | 제목 | 내용 | 중요도(1부터 3까지)`');
+		msg.channel.send('[오류!] 구문: `r!help @호출할-관리자-멘션(핑) | 제목 | 내용 | 중요도(1부터 3까지)`');
 		return;
 	}
 	
@@ -210,32 +210,59 @@ client.on('message', msg => {
 		});
 	}
 	
-	/*if(help)
+	if(help)
 	{
-		const title      =         report[1] ;
-		const content    =         report[2] ;
-		const importance = Number(report[3]);
+		const admin      = String(help[2]);
+		const title      =         help[3] ;
+		const content    =         help[4] ;
+		const importance = Number(help[5]);
 		
-		msg.server.members.forEach(m => {
-			if(
-				m.roles.find('723076675503390742') ||
-				m.roles.find('682961210408173577') ||
-				m.roles.find('670625248525156352') ||
-				m.roles.find('682961359688040458')
-			) {
-				m.sendMessage('신고가 왔읍니다. <#' + reportQueueChannel + '>를 확인해주세요.');
-				timeout(1000);
-			}
-		});
+		const m = msg.guild.members.get(admin);
+		
+		if(!m)
+		{
+			msg.channel.send(EmbedMsgbox('X', '사용자를 찾을 수 없습니다.'));
+			return;
+		}
+		
+		const id = itoa(sizeof(jsnTickets) + 1);
+		
+		if(
+			m.roles.find(r => r.id == '723076675503390742') ||
+			m.roles.find(r => r.id == '682961210408173577') ||
+			m.roles.find(r => r.id == '670625248525156352') ||
+			m.roles.find(r => r.id == '682961359688040458')
+		) {
+			m.user.send('문의(#' + id + ')가 왔읍니다. <#' + reportQueueChannel + '>를 확인해주세요.').then(m => {}).catch(e => {});
+			timeout(1000);
+		} else {
+			msg.channel.send(EmbedMsgbox('X', "관리자가 아닙니다."));
+			return;
+		}
 		
 		const _embed = new DJS11.RichEmbed()
-							.setColr('#00C8C8')
-							.setTitle('[신고] ' + title)
+							.setColor('#00C8C8')
+							.setTitle('[문의] ' + title)
 							.setDescription(content)
-							.setFooter('중요도: ' + importance == 3 ? '높음' : (importance == 2 ? '보통' :'낮음'));
+							.addField('중요도', (importance == 3 ? '높음' : (importance == 2 ? '보통' :'낮음')), true)
+							.addField('접수 번호', '#' + id, true);
 		
-		client.channels.get(reportQueueChannel).send(_embed);
-	}*/
+		client.channels.get(reportQueueChannel).send(_embed).then(m => {
+			jsnTickets[id] = {
+				'title': title,
+				description: content,
+				'importance': importance,
+				type: 'help',
+				requester: msg.member.user.id,
+				embed_message_id: m.id,
+				'admin': admin
+			};
+		
+			fs.writeFile('./tickets.json', JSON.stringify(jsnTickets), 'utf8', e => {});
+			
+			msg.channel.send(EmbedMsgbox('I', '문의가 접수되었읍니다. 접수번호는 #' + id + '입니다.'));
+		});
+	}
 	
 	if(cancel)
 	{
@@ -291,9 +318,15 @@ client.on('message', msg => {
 			return;
 		}
 		
-		if(!jsnTickets[requestID] || jsnTickets[requestID]['requester'] != msg.member.user.id)
+		if(!jsnTickets[requestID])
 		{
-			msg.channel.send(EmbedMsgbox('X', '요청이 올바르지 않거나 다른 사람이 문의했으면 조회할 수 없습니다.'));
+			msg.channel.send(EmbedMsgbox('X', '요청이 올바르지 않습니다.'));
+			return;
+		}
+		
+		if(jsnTickets[requestID] && jsnTickets[requestID]['type'] == 'help' && jsnTickets[requestID]['admin'] != msg.member.user.id)
+		{
+			msg.channel.send(EmbedMsgbox('X', '요청을 닫으려면 `reject`를 사용하십시오. 요청자가 지목한 관리자만 답변할 수 있읍니다.'));
 			return;
 		}
 		
@@ -332,9 +365,9 @@ client.on('message', msg => {
 			return;
 		}
 		
-		if(!jsnTickets[requestID] || jsnTickets[requestID]['requester'] != msg.member.user.id)
+		if(!jsnTickets[requestID])
 		{
-			msg.channel.send(EmbedMsgbox('X', '요청이 올바르지 않거나 다른 사람이 문의했으면 조회할 수 없습니다.'));
+			msg.channel.send(EmbedMsgbox('X', '요청이 올바르지 않습니다.'));
 			return;
 		}
 		
@@ -388,8 +421,9 @@ client.on('message', msg => {
  - r!view: 신고를 조회합니다.
  - r!cancel: 신고를 지웁니다.
  - r!resolve: 신고에 답변합니다.
- - r!reject: 신고를 거절합니다.`);
+ - r!reject: 신고를 거절합니다.
+ 
+ * 명령 구문의 띄어쓰기는 무시됩니다.
+`);
 	}
 });
-
-client.login('qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq');
