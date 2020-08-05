@@ -113,7 +113,7 @@ client.on('ready', () => {
 
 client.on('message', msg => {
 	const report  = msg.content.match(/^r[!]report\s{0,}(.+)[|](.+)[|](.+)/i);
-	const help    = msg.content.match(/^r[!]help\s{0,}[<][@]([!]|)(\d+)[>][|](.+)[|](.+)[|](.+)/i);
+	const help    = msg.content.match(/^r[!]help\s{0,}[<][@]([!]|)(\d+)[>]\s{0,}[|](.+)[|](.+)[|](.+)/i);
 	const cancel  = msg.content.match(/^r[!]cancel\s{0,}(\d+)/i);
 	const view    = msg.content.match(/^r[!]view\s{0,}(\d+)/i);
 	const reject  = msg.content.match(/^r[!]reject\s{0,}(\d+)(.+)/i);
@@ -222,6 +222,12 @@ client.on('message', msg => {
 		if(!m)
 		{
 			msg.channel.send(EmbedMsgbox('X', '사용자를 찾을 수 없습니다.'));
+			return;
+		}
+		
+		if(m.user.bot)
+		{
+			msg.channel.send(EmbedMsgbox('X', '호출할 사용자가 봇이면 안됩니다.'));
 			return;
 		}
 		
@@ -427,3 +433,5 @@ client.on('message', msg => {
 `);
 	}
 });
+
+client.login('qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq');
